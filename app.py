@@ -160,7 +160,7 @@ def get_exams():
     if matched_files:
         exam = {
             "receiverId": receiver_id,
-            "receiverName": current_user,
+            "receiver": current_user,
             "files": matched_files
         }
         exams.append(exam)
