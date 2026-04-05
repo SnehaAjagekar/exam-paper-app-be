@@ -55,11 +55,7 @@ app.config['AWS_ACCESS_KEY_ID'] = os.getenv('AWS_ACCESS_KEY_ID', '')
 app.config['AWS_SECRET_ACCESS_KEY'] = os.getenv('AWS_SECRET_ACCESS_KEY', '')
 app.config['FRONTEND_ORIGIN'] = os.getenv('FRONTEND_ORIGIN', 'http://localhost:5173')
 
-CORS(
-    app,
-    supports_credentials=True,
-    origins=[app.config['FRONTEND_ORIGIN']]
-)
+CORS(app, origins=["http://13.53.112.235"])
 
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
