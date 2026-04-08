@@ -31,6 +31,7 @@ def load_dotenv(dotenv_path='.env'):
 
 # Initialize Flask App
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 load_dotenv()
 
 # Configure logging
@@ -55,7 +56,7 @@ app.config['AWS_ACCESS_KEY_ID'] = os.getenv('AWS_ACCESS_KEY_ID', '')
 app.config['AWS_SECRET_ACCESS_KEY'] = os.getenv('AWS_SECRET_ACCESS_KEY', '')
 app.config['FRONTEND_ORIGIN'] = os.getenv('FRONTEND_ORIGIN', 'http://localhost:5173')
 
-CORS(app, origins=["http://13.53.112.235"])
+
 
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -70,8 +71,73 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 # [Keep all your helper functions and other routes the same...]
+@app.route('/register', methods=['POST'])
+def register():
+
+    try:
+        data = request.get_json()
+
+        # 🔴 Check if data exists
+        if not data:
+            return jsonify({"message": "No data provided"}), 400
+
+        # 🔴 Extract fields
+        college_name = data.get("collegeName")
+        full_name = data.get("fullName")
+        role = data.get("role")
+        distributor_receiver_id = data.get("distributorReceiverId")
+        phone_number = data.get("phoneNumber")
+        email = data.get("email")
+        username = data.get("username")
+        password = data.get("password")
+
+        # 🔴 Validate required fields
+        if not all([college_name, full_name, role, distributor_receiver_id, phone_number, email, username, password]):
+            return jsonify({"message": "All fields are required"}), 400
+
+        # 🔴 Check duplicates
+        if User.query.filter_by(username=username).first():
+            return jsonify({"message": "Username already exists"}), 409
+
+        if User.query.filter_by(email=email).first():
+            return jsonify({"message": "Email already exists"}), 409
+
+        if User.query.filter_by(phone_number=phone_number).first():
+            return jsonify({"message": "Phone number already exists"}), 409
+
+        if User.query.filter_by(distributor_receiver_id=distributor_receiver_id).first():
+            return jsonify({"message": "Distributor/Receiver ID already exists"}), 409
+
+        # 🔴 Create new user
+        new_user = User(
+            college_name=college_name,
+            full_name=full_name,
+            role=role,
+            distributor_receiver_id=distributor_receiver_id,
+            phone_number=phone_number,
+            email=email,
+            username=username
+        )
+
+        # 🔴 Hash password
+        new_user.set_password(password)
+
+        # 🔴 Save to DB
+        db.session.add(new_user)
+        db.session.commit()
+
+        return jsonify({
+            "message": "User registered successfully"
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Register error: {str(e)}", exc_info=True)
+        return jsonify({"message": f"Registration failed: {str(e)}"}), 500
+
 
 @app.route('/login', methods=['POST'])
+
 def login():
     data = request.get_json()
     if not data or not data.get('username') or not data.get('password'):
